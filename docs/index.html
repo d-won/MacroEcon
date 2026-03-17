@@ -27,7 +27,6 @@ body {
 }
 .container { max-width: 1400px; margin: 0 auto; padding: 16px; }
 
-/* Header */
 header {
   background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
   border-bottom: 1px solid var(--border);
@@ -39,7 +38,6 @@ header h1 { font-size: 1.4rem; font-weight: 700; }
 header h1 span { font-size: 1.6rem; margin-right: 8px; }
 .updated { font-size: 0.8rem; color: var(--text-dim); }
 
-/* Tabs */
 .tabs {
   display: flex;
   gap: 4px;
@@ -64,7 +62,6 @@ header h1 span { font-size: 1.6rem; margin-right: 8px; }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 
-/* KPI Cards */
 .kpi-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -82,6 +79,16 @@ header h1 span { font-size: 1.6rem; margin-right: 8px; }
 .kpi-value { font-size: 1.5rem; font-weight: 700; }
 .kpi-value.positive { color: var(--green); }
 .kpi-value.negative { color: var(--red); }
+
+/* Sector badge */
+.sector-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fff;
+}
 
 /* Table */
 .table-wrap {
@@ -115,9 +122,65 @@ td {
   padding: 10px 14px;
   border-bottom: 1px solid var(--border);
 }
-tr:hover { background: rgba(79,143,247,0.05); }
+tr.clickable { cursor: pointer; }
+tr.clickable:hover { background: rgba(79,143,247,0.08); }
+tr.selected { background: rgba(79,143,247,0.15) !important; }
 .pos { color: var(--green); font-weight: 600; }
 .neg { color: var(--red); font-weight: 600; }
+
+/* Sector group header in table */
+tr.sector-header td {
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 10px 14px;
+  border-bottom: 2px solid;
+  color: #fff;
+}
+
+/* Stock chart panel */
+.stock-chart-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  margin-top: 16px;
+  display: none;
+}
+.stock-chart-panel.visible { display: block; }
+.stock-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.stock-chart-header h3 { font-size: 1.1rem; }
+.stock-chart-close {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 4px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+.stock-chart-close:hover { border-color: var(--red); color: var(--red); }
+.stock-chart-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.stock-info-item {
+  text-align: center;
+  padding: 8px;
+  background: var(--bg);
+  border-radius: 6px;
+}
+.stock-info-item .label { font-size: 0.7rem; color: var(--text-dim); }
+.stock-info-item .value { font-size: 0.95rem; font-weight: 600; }
+.stock-chart-canvas-wrap { position: relative; height: 350px; }
 
 /* Filters */
 .filters {
@@ -125,6 +188,7 @@ tr:hover { background: rgba(79,143,247,0.05); }
   gap: 10px;
   margin-bottom: 16px;
   flex-wrap: wrap;
+  align-items: flex-end;
 }
 .filter-group label {
   display: block;
@@ -162,19 +226,38 @@ tr:hover { background: rgba(79,143,247,0.05); }
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 18px;
+  border-top: 3px solid;
 }
-.sector-card h3 {
-  font-size: 1rem;
-  margin-bottom: 10px;
-  padding-bottom: 8px;
+.sector-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
   border-bottom: 1px solid var(--border);
+}
+.sector-card-header h3 { font-size: 1rem; }
+.sector-avg {
+  font-size: 1.1rem;
+  font-weight: 700;
 }
 .sector-company {
   display: flex;
   justify-content: space-between;
-  padding: 6px 0;
+  align-items: center;
+  padding: 8px 0;
   font-size: 0.85rem;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  cursor: pointer;
+  transition: background 0.15s;
+  margin: 0 -8px;
+  padding-left: 8px;
+  padding-right: 8px;
+  border-radius: 4px;
 }
+.sector-company:hover { background: rgba(79,143,247,0.08); }
+.sector-company:last-child { border-bottom: none; }
+.sector-company .ticker { color: var(--accent); font-weight: 600; margin-right: 6px; }
 
 /* Company detail */
 .detail-header {
@@ -236,7 +319,6 @@ tr:hover { background: rgba(79,143,247,0.05); }
 }
 .btn:hover { opacity: 0.85; }
 
-/* Mobile */
 @media (max-width: 768px) {
   .container { padding: 10px; }
   header h1 { font-size: 1.1rem; }
@@ -245,6 +327,8 @@ tr:hover { background: rgba(79,143,247,0.05); }
   table { font-size: 0.75rem; }
   th, td { padding: 8px 10px; }
   .tab { padding: 8px 14px; font-size: 0.8rem; }
+  .stock-chart-canvas-wrap { height: 250px; }
+  .stock-chart-info { grid-template-columns: repeat(3, 1fr); }
 }
 </style>
 </head>
@@ -260,9 +344,8 @@ tr:hover { background: rgba(79,143,247,0.05); }
 <div class="container">
   <div class="tabs" id="tabs">
     <div class="tab active" data-tab="overview">📈 종합 현황</div>
-    <div class="tab" data-tab="chart">📉 주가 차트</div>
+    <div class="tab" data-tab="chart">📉 주가 비교</div>
     <div class="tab" data-tab="sector">🏭 섹터 분석</div>
-    <div class="tab" data-tab="detail">🔍 기업 상세</div>
     <div class="tab" data-tab="download">💾 CSV 다운로드</div>
   </div>
 
@@ -285,9 +368,20 @@ tr:hover { background: rgba(79,143,247,0.05); }
         <tbody id="summary-body"></tbody>
       </table>
     </div>
+    <!-- Stock chart panel (appears on row click) -->
+    <div class="stock-chart-panel" id="stock-chart-panel">
+      <div class="stock-chart-header">
+        <h3 id="stock-chart-title"></h3>
+        <button class="stock-chart-close" onclick="closeStockChart()">닫기</button>
+      </div>
+      <div class="stock-chart-info" id="stock-chart-info"></div>
+      <div class="stock-chart-canvas-wrap">
+        <canvas id="stockChart"></canvas>
+      </div>
+    </div>
   </div>
 
-  <!-- ===== 주가 차트 ===== -->
+  <!-- ===== 주가 비교 ===== -->
   <div class="tab-content" id="tab-chart">
     <div class="filters">
       <div class="filter-group">
@@ -324,20 +418,6 @@ tr:hover { background: rgba(79,143,247,0.05); }
     <div class="sector-grid" id="sector-grid"></div>
   </div>
 
-  <!-- ===== 기업 상세 ===== -->
-  <div class="tab-content" id="tab-detail">
-    <div class="filters">
-      <div class="filter-group">
-        <label>기업 선택</label>
-        <select id="detail-select"></select>
-      </div>
-    </div>
-    <div id="detail-content"></div>
-    <div class="chart-box">
-      <canvas id="detailChart"></canvas>
-    </div>
-  </div>
-
   <!-- ===== CSV 다운로드 ===== -->
   <div class="tab-content" id="tab-download">
     <div class="download-grid">
@@ -367,6 +447,21 @@ const pricesData = {"005930.KS": {"dates": ["2025-03-16", "2025-03-17", "2025-03
 const companiesData = [{"ticker": "FDX", "name": "FedEx", "sector": "운송/물류", "country": "US", "reason": "글로벌 물동량의 바로미터. 기업간 화물량이 경기에 3~6개월 선행"}, {"ticker": "UPS", "name": "UPS", "sector": "운송/물류", "country": "US", "reason": "소비재·산업재 배송량으로 내수 경기 선행 파악"}, {"ticker": "MAERSK-B.CO", "name": "A.P. Moller-Maersk", "sector": "운송/물류", "country": "DK", "reason": "세계 최대 해운사. 컨테이너 물동량이 글로벌 무역 선행"}, {"ticker": "TSM", "name": "TSMC", "sector": "반도체", "country": "TW", "reason": "파운드리 주문량이 IT·산업 전반 설비투자 사이클 선행"}, {"ticker": "005930.KS", "name": "삼성전자", "sector": "반도체", "country": "KR", "reason": "메모리 반도체 가격·재고가 글로벌 IT 경기 선행"}, {"ticker": "ASML", "name": "ASML", "sector": "반도체", "country": "NL", "reason": "반도체 장비 주문이 칩 수요 사이클에 12~18개월 선행"}, {"ticker": "CAT", "name": "Caterpillar", "sector": "산업재/건설", "country": "US", "reason": "건설·광업 장비 주문이 인프라·원자재 사이클 선행"}, {"ticker": "URI", "name": "United Rentals", "sector": "산업재/건설", "country": "US", "reason": "장비 임대율이 건설·산업 활동 선행 지표"}, {"ticker": "MMM", "name": "3M", "sector": "산업재/건설", "country": "US", "reason": "산업용 소재 수요가 제조업 경기 선행"}, {"ticker": "BASFY", "name": "BASF", "sector": "화학/소재", "country": "DE", "reason": "세계 최대 화학 기업. 화학 제품 수요가 제조업 사이클 선행"}, {"ticker": "DD", "name": "DuPont", "sector": "화학/소재", "country": "US", "reason": "전자·건설·자동차 소재 수요로 다수 산업 경기 선행 파악"}, {"ticker": "LIN", "name": "Linde", "sector": "화학/소재", "country": "IE", "reason": "산업용 가스 수요가 제조업·에너지 활동 선행"}, {"ticker": "GS", "name": "Goldman Sachs", "sector": "금융", "country": "US", "reason": "IB 딜 파이프라인·트레이딩 수익이 자본시장 사이클 선행"}, {"ticker": "V", "name": "Visa", "sector": "금융", "country": "US", "reason": "카드 결제량이 소비 지출 트렌드 실시간 선행 지표"}, {"ticker": "RHI", "name": "Robert Half", "sector": "채용/인력", "country": "US", "reason": "임시직 수요가 정규직 고용·실업률에 3~6개월 선행"}, {"ticker": "MAN", "name": "ManpowerGroup", "sector": "채용/인력", "country": "US", "reason": "글로벌 인력 수급 지표가 고용 시장 전환점 선행"}, {"ticker": "HD", "name": "Home Depot", "sector": "소비재", "country": "US", "reason": "주택 개보수 지출이 주택 시장·소비 경기 선행"}, {"ticker": "RACE", "name": "Ferrari", "sector": "소비재", "country": "IT", "reason": "초고가 소비재 수요가 부유층 심리·자산효과 선행 지표"}, {"ticker": "BHP", "name": "BHP Group", "sector": "원자재/에너지", "country": "AU", "reason": "철광석·구리 생산량이 중국·글로벌 산업 활동 선행"}, {"ticker": "FCX", "name": "Freeport-McMoRan", "sector": "원자재/에너지", "country": "US", "reason": "구리 가격·수요가 'Dr. Copper'로서 경기 선행"}];
 const companyMap = {};
 companiesData.forEach(c => companyMap[c.ticker] = c);
+
+// ── 섹터 색상 매핑 ──
+const SECTOR_COLORS = {
+  '운송/물류': '#3b82f6',
+  '반도체': '#8b5cf6',
+  '산업재/건설': '#f59e0b',
+  '화학/소재': '#10b981',
+  '금융': '#06b6d4',
+  '채용/인력': '#ec4899',
+  '소비재': '#f97316',
+  '원자재/에너지': '#ef4444',
+};
+function getSectorColor(sector) {
+  return SECTOR_COLORS[sector] || '#64748b';
+}
 
 // ── 탭 전환 ──
 document.querySelectorAll('.tab').forEach(tab => {
@@ -400,7 +495,6 @@ function fmtCap(v) {
   return '$' + (v/1e6).toFixed(0) + 'M';
 }
 
-// Chart.js 색상 팔레트
 const COLORS = [
   '#4f8ff7','#22c55e','#ef4444','#eab308','#a855f7',
   '#ec4899','#06b6d4','#f97316','#84cc16','#6366f1',
@@ -447,22 +541,13 @@ function initFilters() {
     opt.value = c; opt.textContent = c;
     countrySel.appendChild(opt);
   });
-
-  // 기업 상세 드롭다운
-  const detailSel = document.getElementById('detail-select');
-  summaryData.forEach(d => {
-    const opt = document.createElement('option');
-    opt.value = d.Ticker;
-    opt.textContent = `${d.Ticker} - ${d.Name}`;
-    detailSel.appendChild(opt);
-  });
 }
 
-// ── 요약 테이블 ──
+// ── 요약 테이블 (섹터별 그룹) ──
 const TABLE_COLS = [
   {key:'Ticker', label:'티커', sort:'string'},
   {key:'Name', label:'기업명', sort:'string'},
-  {key:'Sector', label:'섹터', sort:'string'},
+  {key:'Sector', label:'섹터', sort:'string', isSector: true},
   {key:'Country', label:'국가', sort:'string'},
   {key:'Current_Price', label:'현재가', sort:'number', fmt: v => fmt(v)},
   {key:'Change_1D_pct', label:'1일 %', sort:'number', fmt: fmtPct, cls: pctClass},
@@ -503,15 +588,39 @@ function renderTable() {
     `<th onclick="sortTable(${i})">${c.label} ${sortCol === i ? (sortAsc ? '▲' : '▼') : ''}</th>`
   ).join('');
 
+  // Group by sector if no sort is active and sector filter is "all"
+  const groupBySector = sortCol === null && sector === 'all';
   const body = document.getElementById('summary-body');
-  body.innerHTML = data.map(d =>
-    '<tr>' + TABLE_COLS.map(c => {
+
+  if (groupBySector) {
+    const sectorOrder = [...new Set(data.map(d => d.Sector))];
+    let html = '';
+    sectorOrder.forEach(s => {
+      const color = getSectorColor(s);
+      html += `<tr class="sector-header"><td colspan="${TABLE_COLS.length}" style="border-color:${color}; background: ${color}20;"><span style="color:${color}">■</span> ${s}</td></tr>`;
+      const sectorData = data.filter(d => d.Sector === s);
+      sectorData.forEach(d => {
+        html += renderRow(d);
+      });
+    });
+    body.innerHTML = html;
+  } else {
+    body.innerHTML = data.map(d => renderRow(d)).join('');
+  }
+}
+
+function renderRow(d) {
+  return `<tr class="clickable" onclick="showStockChart('${d.Ticker}')" data-ticker="${d.Ticker}">` +
+    TABLE_COLS.map(c => {
       const val = d[c.key];
+      if (c.isSector) {
+        const color = getSectorColor(val);
+        return `<td><span class="sector-badge" style="background:${color}">${val}</span></td>`;
+      }
       const display = c.fmt ? c.fmt(val) : (val ?? '-');
       const cls = c.cls ? c.cls(val) : '';
       return `<td class="${cls}">${display}</td>`;
-    }).join('') + '</tr>'
-  ).join('');
+    }).join('') + '</tr>';
 }
 
 function sortTable(colIdx) {
@@ -520,7 +629,111 @@ function sortTable(colIdx) {
   renderTable();
 }
 
-// ── 주가 차트 ──
+// ── 개별 종목 주가 차트 (테이블 행 클릭) ──
+let stockChart = null;
+let selectedTicker = null;
+
+function showStockChart(ticker) {
+  const panel = document.getElementById('stock-chart-panel');
+  const d = summaryData.find(r => r.Ticker === ticker);
+  const info = companyMap[ticker] || {};
+  const pData = pricesData[ticker];
+
+  if (!d) return;
+
+  // Highlight selected row
+  selectedTicker = ticker;
+  document.querySelectorAll('#summary-body tr.clickable').forEach(tr => {
+    tr.classList.toggle('selected', tr.dataset.ticker === ticker);
+  });
+
+  // Title
+  const color = getSectorColor(d.Sector);
+  document.getElementById('stock-chart-title').innerHTML =
+    `${d.Name} <span style="color:var(--text-dim);font-weight:400;font-size:0.9rem">(${d.Ticker})</span> <span class="sector-badge" style="background:${color};font-size:0.7rem;vertical-align:middle">${d.Sector}</span>`;
+
+  // Info metrics
+  document.getElementById('stock-chart-info').innerHTML = `
+    <div class="stock-info-item"><div class="label">현재가</div><div class="value">${fmt(d.Current_Price)}</div></div>
+    <div class="stock-info-item"><div class="label">1일</div><div class="value ${pctClass(d.Change_1D_pct)}">${fmtPct(d.Change_1D_pct)}</div></div>
+    <div class="stock-info-item"><div class="label">1주</div><div class="value ${pctClass(d.Change_1W_pct)}">${fmtPct(d.Change_1W_pct)}</div></div>
+    <div class="stock-info-item"><div class="label">1개월</div><div class="value ${pctClass(d.Change_1M_pct)}">${fmtPct(d.Change_1M_pct)}</div></div>
+    <div class="stock-info-item"><div class="label">3개월</div><div class="value ${pctClass(d.Change_3M_pct)}">${fmtPct(d.Change_3M_pct)}</div></div>
+    <div class="stock-info-item"><div class="label">시가총액</div><div class="value">${fmtCap(d.Market_Cap)}</div></div>
+    <div class="stock-info-item"><div class="label">PER</div><div class="value">${fmt(d.PE_Ratio, 1)}</div></div>
+    <div class="stock-info-item"><div class="label">52주 고/저</div><div class="value" style="font-size:0.8rem">${fmt(d['52W_High'])} / ${fmt(d['52W_Low'])}</div></div>
+  `;
+  if (info.reason) {
+    document.getElementById('stock-chart-info').innerHTML += `
+      <div class="stock-info-item" style="grid-column: 1 / -1; text-align:left;">
+        <div class="label">선행 근거</div>
+        <div style="font-size:0.85rem;font-weight:400;color:var(--text)">${info.reason}</div>
+      </div>`;
+  }
+
+  // Chart
+  if (pData && pData.dates.length > 0) {
+    if (stockChart) stockChart.destroy();
+
+    const prices = pData.close;
+    const startPrice = prices[0];
+    const endPrice = prices[prices.length - 1];
+    const isUp = endPrice >= startPrice;
+    const lineColor = isUp ? '#22c55e' : '#ef4444';
+    const bgColor = isUp ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)';
+
+    stockChart = new Chart(document.getElementById('stockChart'), {
+      type: 'line',
+      data: {
+        labels: pData.dates,
+        datasets: [{
+          label: d.Name + ' 종가',
+          data: prices,
+          borderColor: lineColor,
+          backgroundColor: bgColor,
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          tension: 0.3,
+          fill: true,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#1a1d29',
+            titleColor: '#e0e0e0',
+            bodyColor: '#e0e0e0',
+            borderColor: '#2a2d3a',
+            borderWidth: 1,
+            callbacks: {
+              label: ctx => `${d.Currency || 'USD'} ${ctx.parsed.y.toFixed(2)}`
+            }
+          },
+        },
+        scales: {
+          x: { ticks: { color: '#666', maxTicksLimit: 8 }, grid: { color: 'rgba(255,255,255,0.05)' } },
+          y: { ticks: { color: '#666' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        },
+      },
+    });
+  }
+
+  panel.classList.add('visible');
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function closeStockChart() {
+  document.getElementById('stock-chart-panel').classList.remove('visible');
+  document.querySelectorAll('#summary-body tr.clickable').forEach(tr => tr.classList.remove('selected'));
+  selectedTicker = null;
+  if (stockChart) { stockChart.destroy(); stockChart = null; }
+}
+
+// ── 주가 비교 차트 ──
 let priceChart = null;
 function renderPriceChart() {
   const sectorFilter = document.getElementById('chart-sector-filter').value;
@@ -534,6 +747,8 @@ function renderPriceChart() {
 
   const datasets = tickers.map((ticker, i) => {
     const d = pricesData[ticker];
+    const info = companyMap[ticker];
+    const sectorColor = info ? getSectorColor(info.sector) : COLORS[i % COLORS.length];
     let values = d.close;
     if (normalize && values.length > 0) {
       const base = values[0];
@@ -542,7 +757,7 @@ function renderPriceChart() {
     return {
       label: d.name || ticker,
       data: values,
-      borderColor: COLORS[i % COLORS.length],
+      borderColor: sectorFilter === 'all' ? sectorColor : COLORS[i % COLORS.length],
       borderWidth: 1.5,
       pointRadius: 0,
       tension: 0.3,
@@ -579,7 +794,6 @@ function renderSectorAnalysis() {
   const periodKey = document.getElementById('sector-period').value;
   const periodLabel = {'Change_1D_pct':'1일','Change_1W_pct':'1주','Change_1M_pct':'1개월','Change_3M_pct':'3개월'}[periodKey];
 
-  // 섹터별 평균
   const sectorMap = {};
   summaryData.forEach(d => {
     if (!sectorMap[d.Sector]) sectorMap[d.Sector] = [];
@@ -589,7 +803,7 @@ function renderSectorAnalysis() {
   const sectors = Object.keys(sectorMap).sort((a,b) => {
     const avgA = sectorMap[a].reduce((s,v) => s+v, 0) / sectorMap[a].length;
     const avgB = sectorMap[b].reduce((s,v) => s+v, 0) / sectorMap[b].length;
-    return avgA - avgB;
+    return avgB - avgA;
   });
 
   const avgs = sectors.map(s => {
@@ -597,102 +811,70 @@ function renderSectorAnalysis() {
     return +(vals.reduce((a,b) => a+b, 0) / vals.length).toFixed(2);
   });
 
-  const bgColors = avgs.map(v => v > 0 ? 'rgba(34,197,94,0.7)' : 'rgba(239,68,68,0.7)');
+  const bgColors = sectors.map(s => getSectorColor(s));
 
   if (sectorChart) sectorChart.destroy();
   sectorChart = new Chart(document.getElementById('sectorChart'), {
     type: 'bar',
     data: {
       labels: sectors,
-      datasets: [{ label: `평균 ${periodLabel} 변동률 (%)`, data: avgs, backgroundColor: bgColors, borderRadius: 4 }],
+      datasets: [{ label: `평균 ${periodLabel} 변동률 (%)`, data: avgs, backgroundColor: bgColors, borderRadius: 6 }],
     },
     options: {
       indexAxis: 'y',
       responsive: true,
       plugins: {
         legend: { display: false },
-        tooltip: { backgroundColor: '#1a1d29', titleColor: '#e0e0e0', bodyColor: '#e0e0e0' },
+        tooltip: {
+          backgroundColor: '#1a1d29',
+          titleColor: '#e0e0e0',
+          bodyColor: '#e0e0e0',
+          callbacks: {
+            label: ctx => `${ctx.parsed.x > 0 ? '+' : ''}${ctx.parsed.x.toFixed(2)}%`
+          }
+        },
       },
       scales: {
-        x: { ticks: { color: '#666' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-        y: { ticks: { color: '#aaa' }, grid: { display: false } },
+        x: {
+          ticks: { color: '#666', callback: v => v + '%' },
+          grid: { color: 'rgba(255,255,255,0.05)' },
+        },
+        y: { ticks: { color: '#ccc', font: { weight: 'bold' } }, grid: { display: false } },
       },
     },
   });
 
   // 섹터 카드
   const grid = document.getElementById('sector-grid');
-  grid.innerHTML = sectors.map(s => {
+  grid.innerHTML = sectors.map((s, si) => {
     const companies = summaryData.filter(d => d.Sector === s);
+    const avg = avgs[si];
+    const color = getSectorColor(s);
     const compHTML = companies.map(d =>
-      `<div class="sector-company"><span>${d.Ticker} ${d.Name}</span><span class="${pctClass(d[periodKey])}">${fmtPct(d[periodKey])}</span></div>`
+      `<div class="sector-company" onclick="navigateToStock('${d.Ticker}')">
+        <span><span class="ticker">${d.Ticker}</span> ${d.Name}</span>
+        <span class="${pctClass(d[periodKey])}">${fmtPct(d[periodKey])}</span>
+      </div>`
     ).join('');
-    return `<div class="sector-card"><h3>${s}</h3>${compHTML}</div>`;
+    return `<div class="sector-card" style="border-top-color:${color}">
+      <div class="sector-card-header">
+        <h3 style="color:${color}">${s}</h3>
+        <span class="sector-avg ${pctClass(avg)}">${fmtPct(avg)}</span>
+      </div>
+      ${compHTML}
+    </div>`;
   }).join('');
 }
 
-// ── 기업 상세 ──
-let detailChart = null;
-function renderDetail() {
-  const ticker = document.getElementById('detail-select').value;
-  if (!ticker) return;
-
-  const d = summaryData.find(r => r.Ticker === ticker);
-  const info = companyMap[ticker] || {};
-  const content = document.getElementById('detail-content');
-
-  if (!d) { content.innerHTML = '<p>데이터 없음</p>'; return; }
-
-  content.innerHTML = `
-    <div class="detail-header">
-      <h2>${d.Name} (${d.Ticker})</h2>
-      <div class="detail-meta">${d.Sector} · ${d.Country} · ${d.Currency || 'USD'}</div>
-      <div class="detail-reason">💡 <strong>경기 선행 근거:</strong> ${info.reason || '-'}</div>
-      <div class="detail-metrics">
-        <div class="detail-metric"><div class="kpi-label">현재가</div><div>${fmt(d.Current_Price)}</div></div>
-        <div class="detail-metric"><div class="kpi-label">시가총액</div><div>${fmtCap(d.Market_Cap)}</div></div>
-        <div class="detail-metric"><div class="kpi-label">PER</div><div>${fmt(d.PE_Ratio, 1)}</div></div>
-        <div class="detail-metric"><div class="kpi-label">52주 고가</div><div>${fmt(d['52W_High'])}</div></div>
-        <div class="detail-metric"><div class="kpi-label">52주 저가</div><div>${fmt(d['52W_Low'])}</div></div>
-        <div class="detail-metric"><div class="kpi-label">1일</div><div class="${pctClass(d.Change_1D_pct)}">${fmtPct(d.Change_1D_pct)}</div></div>
-        <div class="detail-metric"><div class="kpi-label">1주</div><div class="${pctClass(d.Change_1W_pct)}">${fmtPct(d.Change_1W_pct)}</div></div>
-        <div class="detail-metric"><div class="kpi-label">1개월</div><div class="${pctClass(d.Change_1M_pct)}">${fmtPct(d.Change_1M_pct)}</div></div>
-        <div class="detail-metric"><div class="kpi-label">3개월</div><div class="${pctClass(d.Change_3M_pct)}">${fmtPct(d.Change_3M_pct)}</div></div>
-      </div>
-    </div>`;
-
-  // 개별 주가 차트
-  const pData = pricesData[ticker];
-  if (pData) {
-    if (detailChart) detailChart.destroy();
-    detailChart = new Chart(document.getElementById('detailChart'), {
-      type: 'line',
-      data: {
-        labels: pData.dates,
-        datasets: [{
-          label: d.Name + ' 종가',
-          data: pData.close,
-          borderColor: '#4f8ff7',
-          backgroundColor: 'rgba(79,143,247,0.1)',
-          borderWidth: 2,
-          pointRadius: 0,
-          tension: 0.3,
-          fill: true,
-        }],
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { display: false },
-          tooltip: { backgroundColor: '#1a1d29', titleColor: '#e0e0e0', bodyColor: '#e0e0e0' },
-        },
-        scales: {
-          x: { ticks: { color: '#666', maxTicksLimit: 10 }, grid: { color: 'rgba(255,255,255,0.05)' } },
-          y: { ticks: { color: '#666' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-        },
-      },
-    });
-  }
+// Navigate to stock from sector card
+function navigateToStock(ticker) {
+  // Switch to overview tab
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+  document.querySelector('[data-tab="overview"]').classList.add('active');
+  document.getElementById('tab-overview').classList.add('active');
+  // Show chart
+  showStockChart(ticker);
 }
 
 // ── CSV 다운로드 ──
@@ -752,7 +934,6 @@ document.getElementById('filter-country').addEventListener('change', renderTable
 document.getElementById('chart-sector-filter').addEventListener('change', renderPriceChart);
 document.getElementById('chart-normalize').addEventListener('change', renderPriceChart);
 document.getElementById('sector-period').addEventListener('change', renderSectorAnalysis);
-document.getElementById('detail-select').addEventListener('change', renderDetail);
 
 // ── 초기 렌더 ──
 initFilters();
@@ -760,7 +941,6 @@ renderKPI();
 renderTable();
 renderPriceChart();
 renderSectorAnalysis();
-renderDetail();
 </script>
 </body>
 </html>
