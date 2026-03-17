@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+
+# 날짜별 아카이브는 무시 (latest만 커밋)
+data/summary_2*.csv
+data/prices_2*.csv
