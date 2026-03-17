@@ -53,7 +53,7 @@ def fetch_price_data(period="1y"):
     df = df[available_cols]
 
     # Date를 날짜만 (시간 제거)
-    df["Date"] = pd.to_datetime(df["Date"]).dt.date
+    df["Date"] = pd.to_datetime(df["Date"], utc=True).dt.date
 
     return df
 
