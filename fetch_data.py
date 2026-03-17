@@ -106,6 +106,55 @@ def fetch_summary_data():
     return pd.DataFrame(rows)
 
 
+def fetch_quarterly_financials():
+    """분기별 매출/영업이익 데이터 수집 (최근 5개년)"""
+    print("Fetching quarterly financial data...")
+    rows = []
+
+    for company in LEADING_COMPANIES:
+        ticker = company["ticker"]
+        try:
+            stock = yf.Ticker(ticker)
+
+            # 분기 재무제표
+            q_income = stock.quarterly_income_stmt
+            if q_income is None or q_income.empty:
+                print(f"  [WARN] No quarterly data for {ticker}")
+                continue
+
+            for col in q_income.columns:
+                date_str = col.strftime("%Y-%m-%d") if hasattr(col, "strftime") else str(col)
+                revenue = None
+                op_income = None
+
+                # 매출
+                for key in ["Total Revenue", "Revenue", "Operating Revenue"]:
+                    if key in q_income.index and pd.notna(q_income.loc[key, col]):
+                        revenue = float(q_income.loc[key, col])
+                        break
+
+                # 영업이익
+                for key in ["Operating Income", "EBIT", "Operating Profit"]:
+                    if key in q_income.index and pd.notna(q_income.loc[key, col]):
+                        op_income = float(q_income.loc[key, col])
+                        break
+
+                if revenue is not None or op_income is not None:
+                    rows.append({
+                        "Ticker": ticker,
+                        "Name": company["name"],
+                        "Date": date_str,
+                        "Revenue": revenue,
+                        "Operating_Income": op_income,
+                    })
+
+            print(f"  [OK] {ticker}: {len([r for r in rows if r['Ticker'] == ticker])} quarters")
+        except Exception as e:
+            print(f"  [ERR] {ticker}: {e}")
+
+    return pd.DataFrame(rows)
+
+
 def save_data():
     """데이터를 CSV로 저장"""
     os.makedirs(DATA_DIR, exist_ok=True)
@@ -129,7 +178,14 @@ def save_data():
         price_df.to_csv(price_path, index=False, encoding="utf-8-sig")
         print(f"Saved prices: {price_path} ({len(price_df)} rows)")
 
-    # 3) 업데이트 타임스탬프
+    # 3) 분기 재무 데이터
+    quarterly_df = fetch_quarterly_financials()
+    if not quarterly_df.empty:
+        quarterly_path = os.path.join(DATA_DIR, "quarterly_latest.csv")
+        quarterly_df.to_csv(quarterly_path, index=False, encoding="utf-8-sig")
+        print(f"Saved quarterly: {quarterly_path} ({len(quarterly_df)} rows)")
+
+    # 4) 업데이트 타임스탬프
     ts_path = os.path.join(DATA_DIR, "last_updated.txt")
     with open(ts_path, "w") as f:
         f.write(datetime.datetime.now().isoformat())

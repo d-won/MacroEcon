@@ -18,11 +18,13 @@ DOCS_DIR = os.path.join(os.path.dirname(__file__), "docs")
 def load_data():
     summary_path = os.path.join(DATA_DIR, "summary_latest.csv")
     prices_path = os.path.join(DATA_DIR, "prices_latest.csv")
+    quarterly_path = os.path.join(DATA_DIR, "quarterly_latest.csv")
 
     summary_df = pd.read_csv(summary_path) if os.path.exists(summary_path) else pd.DataFrame()
     prices_df = pd.read_csv(prices_path) if os.path.exists(prices_path) else pd.DataFrame()
+    quarterly_df = pd.read_csv(quarterly_path) if os.path.exists(quarterly_path) else pd.DataFrame()
 
-    return summary_df, prices_df
+    return summary_df, prices_df, quarterly_df
 
 
 def build_summary_json(summary_df):
@@ -50,11 +52,32 @@ def build_prices_json(prices_df):
     return json.dumps(result, ensure_ascii=False)
 
 
+def build_quarterly_json(quarterly_df):
+    """분기 실적을 티커별 시계열 JSON으로 변환"""
+    if quarterly_df.empty:
+        return "{}"
+    result = {}
+    for ticker, group in quarterly_df.groupby("Ticker"):
+        group = group.sort_values("Date")
+        dates = group["Date"].tolist()
+        revenue = []
+        op_income = []
+        for _, row in group.iterrows():
+            revenue.append(round(row["Revenue"], 0) if pd.notna(row.get("Revenue")) else None)
+            op_income.append(round(row["Operating_Income"], 0) if pd.notna(row.get("Operating_Income")) else None)
+        result[ticker] = {
+            "dates": dates,
+            "revenue": revenue,
+            "operating_income": op_income,
+        }
+    return json.dumps(result, ensure_ascii=False)
+
+
 def build_companies_json():
     return json.dumps(LEADING_COMPANIES, ensure_ascii=False)
 
 
-def generate_html(summary_json, prices_json, companies_json, updated_at):
+def generate_html(summary_json, prices_json, quarterly_json, companies_json, updated_at):
     return f"""<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -137,7 +160,6 @@ header h1 span {{ font-size: 1.6rem; margin-right: 8px; }}
 .kpi-value.positive {{ color: var(--green); }}
 .kpi-value.negative {{ color: var(--red); }}
 
-/* Sector badge */
 .sector-badge {{
   display: inline-block;
   padding: 2px 8px;
@@ -147,7 +169,6 @@ header h1 span {{ font-size: 1.6rem; margin-right: 8px; }}
   color: #fff;
 }}
 
-/* Table */
 .table-wrap {{
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -185,7 +206,6 @@ tr.selected {{ background: rgba(79,143,247,0.15) !important; }}
 .pos {{ color: var(--green); font-weight: 600; }}
 .neg {{ color: var(--red); font-weight: 600; }}
 
-/* Sector group header in table */
 tr.sector-header td {{
   font-weight: 700;
   font-size: 0.85rem;
@@ -239,7 +259,84 @@ tr.sector-header td {{
 .stock-info-item .value {{ font-size: 0.95rem; font-weight: 600; }}
 .stock-chart-canvas-wrap {{ position: relative; height: 350px; }}
 
-/* Filters */
+/* References */
+.ref-section {{
+  margin-top: 16px;
+  padding: 14px;
+  background: var(--bg);
+  border-radius: 8px;
+}}
+.ref-section h4 {{
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}}
+.ref-list {{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}}
+.ref-link {{
+  display: inline-block;
+  padding: 4px 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.78rem;
+  transition: all 0.15s;
+}}
+.ref-link:hover {{
+  background: rgba(79,143,247,0.15);
+  border-color: var(--accent);
+}}
+
+/* Quarterly chart section */
+.quarterly-section {{
+  margin-top: 16px;
+}}
+.quarterly-section h4 {{
+  font-size: 0.85rem;
+  margin-bottom: 10px;
+  color: var(--text);
+}}
+.quarterly-chart-wrap {{
+  position: relative;
+  height: 280px;
+}}
+
+/* Floating back-to-top button */
+.back-to-top {{
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  font-size: 1.3rem;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s, visibility 0.3s, transform 0.2s;
+  z-index: 1000;
+}}
+.back-to-top.visible {{
+  opacity: 1;
+  visibility: visible;
+}}
+.back-to-top:hover {{
+  transform: scale(1.1);
+}}
+
 .filters {{
   display: flex;
   gap: 10px;
@@ -262,7 +359,6 @@ tr.sector-header td {{
   font-size: 0.85rem;
 }}
 
-/* Chart container */
 .chart-box {{
   background: var(--card);
   border: 1px solid var(--border);
@@ -272,7 +368,6 @@ tr.sector-header td {{
 }}
 .chart-box canvas {{ max-height: 500px; }}
 
-/* Sector cards */
 .sector-grid {{
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -316,38 +411,6 @@ tr.sector-header td {{
 .sector-company:last-child {{ border-bottom: none; }}
 .sector-company .ticker {{ color: var(--accent); font-weight: 600; margin-right: 6px; }}
 
-/* Company detail */
-.detail-header {{
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 20px;
-  margin-bottom: 16px;
-}}
-.detail-header h2 {{ margin-bottom: 6px; }}
-.detail-meta {{ color: var(--text-dim); font-size: 0.85rem; }}
-.detail-reason {{
-  background: rgba(79,143,247,0.1);
-  border-left: 3px solid var(--accent);
-  padding: 12px 16px;
-  border-radius: 0 8px 8px 0;
-  margin-top: 12px;
-  font-size: 0.9rem;
-}}
-.detail-metrics {{
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: 10px;
-  margin-top: 14px;
-}}
-.detail-metric {{
-  text-align: center;
-  padding: 10px;
-  background: var(--bg);
-  border-radius: 8px;
-}}
-
-/* Download section */
 .download-grid {{
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -386,6 +449,8 @@ tr.sector-header td {{
   .tab {{ padding: 8px 14px; font-size: 0.8rem; }}
   .stock-chart-canvas-wrap {{ height: 250px; }}
   .stock-chart-info {{ grid-template-columns: repeat(3, 1fr); }}
+  .quarterly-chart-wrap {{ height: 200px; }}
+  .back-to-top {{ bottom: 16px; right: 16px; width: 42px; height: 42px; font-size: 1.1rem; }}
 }}
 </style>
 </head>
@@ -425,7 +490,6 @@ tr.sector-header td {{
         <tbody id="summary-body"></tbody>
       </table>
     </div>
-    <!-- Stock chart panel (appears on row click) -->
     <div class="stock-chart-panel" id="stock-chart-panel">
       <div class="stock-chart-header">
         <h3 id="stock-chart-title"></h3>
@@ -434,6 +498,18 @@ tr.sector-header td {{
       <div class="stock-chart-info" id="stock-chart-info"></div>
       <div class="stock-chart-canvas-wrap">
         <canvas id="stockChart"></canvas>
+      </div>
+      <!-- 분기 실적 차트 -->
+      <div class="quarterly-section" id="quarterly-section" style="display:none">
+        <h4>분기별 매출 / 영업이익 (최근 5개년)</h4>
+        <div class="quarterly-chart-wrap">
+          <canvas id="quarterlyChart"></canvas>
+        </div>
+      </div>
+      <!-- 근거자료 링크 -->
+      <div class="ref-section" id="ref-section" style="display:none">
+        <h4>경기 선행 근거자료</h4>
+        <div class="ref-list" id="ref-list"></div>
       </div>
     </div>
   </div>
@@ -497,13 +573,23 @@ tr.sector-header td {{
   </div>
 </div>
 
+<!-- Floating back-to-top button -->
+<button class="back-to-top" id="backToTop" onclick="window.scrollTo({{top:0,behavior:'smooth'}})">↑</button>
+
 <script>
 // ── 데이터 ──
 const summaryData = {summary_json};
 const pricesData = {prices_json};
+const quarterlyData = {quarterly_json};
 const companiesData = {companies_json};
 const companyMap = {{}};
 companiesData.forEach(c => companyMap[c.ticker] = c);
+
+// ── 상단 복귀 버튼 ──
+const backToTopBtn = document.getElementById('backToTop');
+window.addEventListener('scroll', () => {{
+  backToTopBtn.classList.toggle('visible', window.scrollY > 400);
+}});
 
 // ── 섹터 색상 매핑 ──
 const SECTOR_COLORS = {{
@@ -550,6 +636,13 @@ function fmtCap(v) {{
   if (v >= 1e12) return '$' + (v/1e12).toFixed(1) + 'T';
   if (v >= 1e9) return '$' + (v/1e9).toFixed(1) + 'B';
   return '$' + (v/1e6).toFixed(0) + 'M';
+}}
+function fmtRevenue(v) {{
+  if (v == null || isNaN(v)) return '-';
+  const abs = Math.abs(v);
+  if (abs >= 1e9) return (v/1e9).toFixed(1) + 'B';
+  if (abs >= 1e6) return (v/1e6).toFixed(0) + 'M';
+  return (v/1e3).toFixed(0) + 'K';
 }}
 
 const COLORS = [
@@ -645,7 +738,6 @@ function renderTable() {{
     `<th onclick="sortTable(${{i}})">${{c.label}} ${{sortCol === i ? (sortAsc ? '▲' : '▼') : ''}}</th>`
   ).join('');
 
-  // Group by sector if no sort is active and sector filter is "all"
   const groupBySector = sortCol === null && sector === 'all';
   const body = document.getElementById('summary-body');
 
@@ -686,8 +778,9 @@ function sortTable(colIdx) {{
   renderTable();
 }}
 
-// ── 개별 종목 주가 차트 (테이블 행 클릭) ──
+// ── 개별 종목 주가 차트 ──
 let stockChart = null;
+let quarterlyChart = null;
 let selectedTicker = null;
 
 function showStockChart(ticker) {{
@@ -698,18 +791,16 @@ function showStockChart(ticker) {{
 
   if (!d) return;
 
-  // Highlight selected row
   selectedTicker = ticker;
   document.querySelectorAll('#summary-body tr.clickable').forEach(tr => {{
     tr.classList.toggle('selected', tr.dataset.ticker === ticker);
   }});
 
-  // Title
   const color = getSectorColor(d.Sector);
+  const leadMonths = info.lead_months || '3-6';
   document.getElementById('stock-chart-title').innerHTML =
-    `${{d.Name}} <span style="color:var(--text-dim);font-weight:400;font-size:0.9rem">(${{d.Ticker}})</span> <span class="sector-badge" style="background:${{color}};font-size:0.7rem;vertical-align:middle">${{d.Sector}}</span>`;
+    `${{d.Name}} <span style="color:var(--text-dim);font-weight:400;font-size:0.9rem">(${{d.Ticker}})</span> <span class="sector-badge" style="background:${{color}};font-size:0.7rem;vertical-align:middle">${{d.Sector}}</span> <span style="font-size:0.75rem;color:var(--yellow);font-weight:400;margin-left:6px">⏱ 약 ${{leadMonths}}개월 선행</span>`;
 
-  // Info metrics
   document.getElementById('stock-chart-info').innerHTML = `
     <div class="stock-info-item"><div class="label">현재가</div><div class="value">${{fmt(d.Current_Price)}}</div></div>
     <div class="stock-info-item"><div class="label">1일</div><div class="value ${{pctClass(d.Change_1D_pct)}}">${{fmtPct(d.Change_1D_pct)}}</div></div>
@@ -728,7 +819,7 @@ function showStockChart(ticker) {{
       </div>`;
   }}
 
-  // Chart
+  // 주가 차트
   if (pData && pData.dates.length > 0) {{
     if (stockChart) stockChart.destroy();
 
@@ -779,6 +870,94 @@ function showStockChart(ticker) {{
     }});
   }}
 
+  // 분기 실적 차트
+  const qSection = document.getElementById('quarterly-section');
+  const qData = quarterlyData[ticker];
+  if (qData && qData.dates && qData.dates.length > 0) {{
+    qSection.style.display = 'block';
+    if (quarterlyChart) quarterlyChart.destroy();
+
+    // 분기 라벨 (YYYY-MM → YYYY Q#)
+    const qLabels = qData.dates.map(dt => {{
+      const parts = dt.split('-');
+      const month = parseInt(parts[1]);
+      const q = Math.ceil(month / 3);
+      return parts[0] + ' Q' + q;
+    }});
+
+    quarterlyChart = new Chart(document.getElementById('quarterlyChart'), {{
+      type: 'bar',
+      data: {{
+        labels: qLabels,
+        datasets: [
+          {{
+            label: '매출',
+            data: qData.revenue,
+            backgroundColor: 'rgba(79,143,247,0.7)',
+            borderRadius: 4,
+            yAxisID: 'y',
+            order: 2,
+          }},
+          {{
+            label: '영업이익',
+            data: qData.operating_income,
+            type: 'line',
+            borderColor: '#22c55e',
+            backgroundColor: 'rgba(34,197,94,0.1)',
+            borderWidth: 2,
+            pointRadius: 3,
+            tension: 0.3,
+            fill: false,
+            yAxisID: 'y',
+            order: 1,
+          }},
+        ],
+      }},
+      options: {{
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {{
+          legend: {{ position: 'top', labels: {{ color: '#888', boxWidth: 12, font: {{size: 11}} }} }},
+          tooltip: {{
+            backgroundColor: '#1a1d29',
+            titleColor: '#e0e0e0',
+            bodyColor: '#e0e0e0',
+            callbacks: {{
+              label: ctx => {{
+                const v = ctx.parsed.y;
+                return ctx.dataset.label + ': $' + fmtRevenue(v);
+              }}
+            }}
+          }},
+        }},
+        scales: {{
+          x: {{ ticks: {{ color: '#666', maxRotation: 45 }}, grid: {{ display: false }} }},
+          y: {{
+            ticks: {{
+              color: '#666',
+              callback: v => '$' + fmtRevenue(v),
+            }},
+            grid: {{ color: 'rgba(255,255,255,0.05)' }},
+          }},
+        }},
+      }},
+    }});
+  }} else {{
+    qSection.style.display = 'none';
+  }}
+
+  // 근거자료 링크
+  const refSection = document.getElementById('ref-section');
+  const refList = document.getElementById('ref-list');
+  if (info.references && info.references.length > 0) {{
+    refSection.style.display = 'block';
+    refList.innerHTML = info.references.map(ref =>
+      `<a class="ref-link" href="${{ref.url}}" target="_blank" rel="noopener">${{ref.title}}</a>`
+    ).join('');
+  }} else {{
+    refSection.style.display = 'none';
+  }}
+
   panel.classList.add('visible');
   panel.scrollIntoView({{ behavior: 'smooth', block: 'nearest' }});
 }}
@@ -788,6 +967,7 @@ function closeStockChart() {{
   document.querySelectorAll('#summary-body tr.clickable').forEach(tr => tr.classList.remove('selected'));
   selectedTicker = null;
   if (stockChart) {{ stockChart.destroy(); stockChart = null; }}
+  if (quarterlyChart) {{ quarterlyChart.destroy(); quarterlyChart = null; }}
 }}
 
 // ── 주가 비교 차트 ──
@@ -901,7 +1081,6 @@ function renderSectorAnalysis() {{
     }},
   }});
 
-  // 섹터 카드
   const grid = document.getElementById('sector-grid');
   grid.innerHTML = sectors.map((s, si) => {{
     const companies = summaryData.filter(d => d.Sector === s);
@@ -923,14 +1102,11 @@ function renderSectorAnalysis() {{
   }}).join('');
 }}
 
-// Navigate to stock from sector card
 function navigateToStock(ticker) {{
-  // Switch to overview tab
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
   document.querySelector('[data-tab="overview"]').classList.add('active');
   document.getElementById('tab-overview').classList.add('active');
-  // Show chart
   showStockChart(ticker);
 }}
 
@@ -1006,10 +1182,11 @@ renderSectorAnalysis();
 def main():
     os.makedirs(DOCS_DIR, exist_ok=True)
 
-    summary_df, prices_df = load_data()
+    summary_df, prices_df, quarterly_df = load_data()
 
     summary_json = build_summary_json(summary_df)
     prices_json = build_prices_json(prices_df)
+    quarterly_json = build_quarterly_json(quarterly_df)
     companies_json = build_companies_json()
 
     ts_path = os.path.join(DATA_DIR, "last_updated.txt")
@@ -1019,7 +1196,7 @@ def main():
     else:
         updated_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    html = generate_html(summary_json, prices_json, companies_json, updated_at)
+    html = generate_html(summary_json, prices_json, quarterly_json, companies_json, updated_at)
 
     out_path = os.path.join(DOCS_DIR, "index.html")
     with open(out_path, "w", encoding="utf-8") as f:
